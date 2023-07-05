@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Chitrakarji</string>
+    <string name="about_me">Step into the extraordinary world of an artist whose talents transcend the boundaries of technology and creativity. Meet the enigmatic individual who effortlessly balances their professional life as a computer geek, hosting a popular shop where they sell and repair computer hardware and software products, while passionately pursuing their love for handmade sketches. \n\n This artist’s duality is a captivating paradox, combining the precision and logic of technology with the free-flowing expression of art. Amidst the world of motherboards and circuitry, they carve out time to immerse themselves in the realm of pencils, brushes, and canvases. With meticulous attention to detail and an unwavering dedication to their craft, they create awe-inspiring sketches that showcase their imaginative prowess. \n\n  Prepare to be enchanted by this artist’s multifaceted persona—a captivating combination of computer proficiency and artistic brilliance. Join them on a journey where technology and creativity merge, unlocking a world where imagination knows no bounds and the power of expression takes center stage.</string>
+    <string name="home">Home</string>
+    <string name="about_us">About Us</string>
+    <string name="order_sketch">Order Sketch</string>
+</resources>

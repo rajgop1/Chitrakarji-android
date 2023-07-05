@@ -1,0 +1,22 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+//        maven {
+//            url "https://s3-ap-southeast-1.amazonaws.com/godel-release/godel/"
+//        }
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+//        maven {
+//            url "https://s3-ap-southeast-1.amazonaws.com/godel-release/godel/"
+//        }
+    }
+}
+rootProject.name = "Chitrakarji"
+include ':app'
