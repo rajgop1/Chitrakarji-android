@@ -31,15 +31,359 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
+
         app:layout_constraintBottom_toTopOf="@+id/linearLayout"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/toolbar"
-        android:padding="@dimen/_10sdp">
+        app:layout_constraintVertical_bias="0.0">
+
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-        >
+            android:padding="@dimen/_10sdp">
+
+
+            <TextView
+                android:id="@+id/create_sketch_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Create Sketch"
+                android:textSize="@dimen/_20ssp"
+                android:textFontWeight="800"
+                android:gravity="center"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+
+            <ImageView
+                android:id="@+id/imagePreview"
+                android:layout_width="@dimen/_200sdp"
+                android:layout_height="@dimen/_200sdp"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:src="@drawable/myself"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/create_sketch_label" />
+
+            <Button
+                android:id="@+id/btnSelectImage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Select Image"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/imagePreview" />
+
+            <!-- Page Size -->
+            <LinearLayout
+                android:id="@+id/pageSizeGroup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="@dimen/_10sdp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/btnSelectImage">
+
+                <TextView
+                    android:id="@+id/textPageSize"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Page Size:"
+                    android:textColor="@android:color/black"
+                    android:textSize="@dimen/_16ssp"
+                    android:layout_marginTop="@dimen/_10sdp"/>
+
+                <RadioGroup
+                    android:id="@+id/radioGroupPageSize"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/radioA2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="A2"
+                        android:textSize="@dimen/_14ssp"/>
+
+                    <RadioButton
+                        android:id="@+id/radioA3"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="A3"
+                        android:layout_marginLeft="@dimen/_15sdp"
+                        android:textSize="@dimen/_14ssp"/>
+
+                    <RadioButton
+                        android:id="@+id/radioA4"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="A4"
+                        android:layout_marginLeft="@dimen/_15sdp"
+                        android:textSize="@dimen/_14ssp"/>
+                </RadioGroup>
+            </LinearLayout>
+
+            <!-- Number of Faces -->
+            <LinearLayout
+                android:id="@+id/faceGroup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/pageSizeGroup">
+
+                <TextView
+                    android:id="@+id/textNumOfFaces"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Number of Faces:"
+                    android:textColor="@android:color/black"
+                    android:textSize="@dimen/_16ssp"
+                    android:layout_marginTop="@dimen/_10sdp"/>
+
+                <RadioGroup
+                    android:id="@+id/radioGroupNumOfFaces"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/radio1Face"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="1"
+                        android:textSize="@dimen/_14ssp"/>
+
+                    <RadioButton
+                        android:id="@+id/radio2Faces"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="2"
+                        android:textSize="@dimen/_14ssp"
+                        android:layout_marginLeft="@dimen/_15sdp"/>
+
+                    <RadioButton
+                        android:id="@+id/radio3Faces"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="3"
+                        android:textSize="@dimen/_14ssp"
+                        android:layout_marginLeft="@dimen/_15sdp"/>
+                </RadioGroup>
+            </LinearLayout>
+
+            <!-- Pickup Type -->
+            <LinearLayout
+                android:id="@+id/pickupTypeGroup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/faceGroup">
+
+                <TextView
+                    android:id="@+id/textPickupType"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Pickup Type:"
+                    android:textColor="@android:color/black"
+                    android:textSize="@dimen/_16ssp"
+                    android:layout_marginTop="@dimen/_10sdp"/>
+
+                <RadioGroup
+                    android:id="@+id/radioGroupPickupType"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/radioHomePickup"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Home"
+                        android:textSize="@dimen/_14ssp"/>
+
+                    <RadioButton
+                        android:id="@+id/radioStorePickup"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Store"
+                        android:textSize="@dimen/_14ssp"
+                        android:layout_marginLeft="@dimen/_15sdp"/>
+                </RadioGroup>
+            </LinearLayout>
+
+
+            <!-- Additional Fields (for Home Pickup) -->
+            <LinearLayout
+                android:id="@+id/layoutAdditionalFields"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:layout_marginTop="@dimen/_10sdp"
+                app:layout_constraintTop_toBottomOf="@+id/pickupTypeGroup"
+                tools:layout_editor_absoluteX="15dp">
+
+                <!-- Pincode -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Pincode"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/editPincode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:layout_marginTop="@dimen/_10sdp"/>
+
+                <!-- Address -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Address"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/editAddress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textMultiLine"
+                    android:lines="4" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/note"
+                    android:text="@string/frame_note"
+                    android:textColor="@android:color/holo_red_dark"
+                    android:layout_marginTop="@dimen/_10sdp"/>
+            </LinearLayout>
+
+            <!-- Add Frame -->
+            <LinearLayout
+                android:id="@+id/addFrameGroup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/layoutAdditionalFields">
+
+                <TextView
+                    android:id="@+id/textAddFrame"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_10sdp"
+                    android:text="Add Frame:"
+                    android:textColor="@android:color/black"
+                    android:textSize="@dimen/_16ssp" />
+
+                <RadioGroup
+                    android:id="@+id/radioGroupAddFrame"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/radioYesFrame"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Yes"
+                        android:textSize="@dimen/_14ssp" />
+
+                    <RadioButton
+                        android:id="@+id/radioNoFrame"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="@dimen/_15sdp"
+                        android:text="No"
+                        android:textSize="@dimen/_14ssp" />
+                </RadioGroup>
+            </LinearLayout>
+
+            <!-- Name -->
+            <TextView
+                android:id="@+id/textName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Name:"
+                android:textColor="@android:color/black"
+                android:textSize="@dimen/_16ssp"
+                android:layout_marginTop="@dimen/_10sdp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/addFrameGroup" />
+
+            <EditText
+                android:id="@+id/editName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:hint="Enter your name"
+                android:inputType="textPersonName"
+                android:textSize="@dimen/_14ssp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textName" />
+
+            <!-- Email -->
+            <TextView
+                android:id="@+id/textEmail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Email:"
+                android:textColor="@android:color/black"
+                android:textSize="@dimen/_16ssp"
+                android:layout_marginTop="@dimen/_10sdp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/editName" />
+
+            <EditText
+                android:id="@+id/editEmail"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:hint="Enter your email"
+                android:textSize="@dimen/_14ssp"
+                android:inputType="textEmailAddress"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textEmail" />
+
+            <!-- Phone -->
+            <TextView
+                android:id="@+id/textPhone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Phone:"
+                android:textColor="@android:color/black"
+                android:textSize="@dimen/_16ssp"
+                android:layout_marginTop="@dimen/_10sdp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/editEmail" />
+
+            <EditText
+                android:id="@+id/editPhone"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:hint="Enter your phone number"
+                android:inputType="phone"
+                android:textSize="@dimen/_14ssp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textPhone" />
+            <View
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/_10sdp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/editPhone"
+                android:layout_marginTop="@dimen/_10sdp"
+                />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -47,7 +391,7 @@
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
-        android:layout_width="409dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="?attr/colorPrimary"
         android:minHeight="?attr/actionBarSize"

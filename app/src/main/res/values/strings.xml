@@ -4,4 +4,5 @@
     <string name="home">Home</string>
     <string name="about_us">About Us</string>
     <string name="order_sketch">Order Sketch</string>
+    <string name="frame_note">Note: Please note that the Frame can only be opened using the pincode 26149. It must be delivered to its designated local destination. If it is taken anywhere else, it will be destroyed.</string>
 </resources>
