@@ -9,6 +9,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -51,6 +53,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity
@@ -64,10 +68,19 @@ public class MainActivity extends AppCompatActivity
     private ImageView imagePreview;
     private Uri imageUri; // To store the selected image's URI
     private LinearLayout layoutAddFrame;
+    private EditText editName;
+    private EditText editEmail;
+    private EditText editPhone;
+
     private EditText editPincode;
     private EditText editAddress;
     private RadioButton radioHome;
     private RadioGroup radioGroupPage;
+
+    private RadioGroup radioGroupNumOfFaces;
+
+    private RadioGroup radioGroupPickupType;
+    private RadioGroup radioGroupAddFrame;
 
     private Button btnSelectImage;
     private String encodeImageString;
@@ -118,10 +131,16 @@ public class MainActivity extends AppCompatActivity
         imagePreview = findViewById(R.id.imagePreview);
         Button btnSelectImage = findViewById(R.id.btnSelectImage);
         imagePreview = findViewById(R.id.imagePreview);
+        editName = findViewById(R.id.editName);
+        editEmail = findViewById(R.id.editEmail);
+        editPhone = findViewById(R.id.editPhone);
         editPincode = findViewById(R.id.editPincode);
         editAddress = findViewById(R.id.editAddress);
         radioHome = findViewById(R.id.radioHomePickup);
         radioGroupPage = findViewById(R.id.radioGroupPageSize);
+        radioGroupNumOfFaces = findViewById(R.id.radioGroupNumOfFaces);
+        radioGroupPickupType = findViewById(R.id.radioGroupPickupType);
+        radioGroupAddFrame = findViewById(R.id.radioGroupAddFrame);
 
         layoutAddFrame = findViewById(R.id.addFrameGroup);
         // Image selection button click event
@@ -133,7 +152,6 @@ public class MainActivity extends AppCompatActivity
         });
 
         // RadioGroup change event to show/hide "Add Frame" option
-        RadioGroup radioGroupPickupType = findViewById(R.id.radioGroupPickupType);
         radioGroupPickupType.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup group, int checkedId) {
@@ -238,7 +256,103 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void createOrderUsingVolley() {
-        String url = "http://192.168.0.103:3000/create-order";
+        String url = "http://192.168.241.38:3000/create-order";
+        RequestQueue queue = Volley.newRequestQueue(MainActivity.this);
+
+        String[] formData = getFormData();
+
+        String pageSize = formData[0];
+        String numberOfFaces = formData[1];
+        String pickupType = formData[2];
+        String addFrame = formData[3];
+        String name = formData[4];
+        String email = formData[5];
+        String phone = formData[6];
+        String pincode = formData[7];
+        String address = formData[8];
+
+
+        JSONObject jsonBody = new JSONObject();
+
+        String userOrderIdFromApp = String.valueOf(getOrderID(pageSize, numberOfFaces, pickupType, addFrame));
+        try {
+            jsonBody.put("userOrderIdFromApp", userOrderIdFromApp);
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
+        StringRequest request = new StringRequest(Request.Method.POST, url, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                try {
+                    JSONObject respObj = new JSONObject(response);
+                    String orderId = respObj.getString("order_id");
+                    Log.v("volley response id", orderId);
+                    Instamojo.getInstance().initiatePayment(MainActivity.this, orderId, MainActivity.this);
+
+                } catch (JSONException e) {
+                    Log.v("volley response", String.valueOf(e));
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.v("volley response", String.valueOf(error));
+            }
+        }){
+            @Nullable
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+                Map<String, String> params = new HashMap<String, String>();
+                // on below line we are passing our key
+                // and value pair to our parameters.
+                params.put("userOrderIdFromApp", userOrderIdFromApp);
+                params.put("name", name);
+                params.put("email", email);
+                params.put("phone", phone);
+
+                return params;
+            }
+        };
+        queue.add(request);
+
+    }
+
+    private void sendOrderDetailsUsingVolley() {
+
+        String url = "http://192.168.241.38:3000/payment-result";
+
+
+        JSONObject jsonBody = new JSONObject();
+        String[] formData = getFormData();
+
+        String pageSize = formData[0];
+        String numberOfFaces = formData[1];
+        String pickupType = formData[2];
+        String addFrame = formData[3];
+        String name = formData[4];
+        String email = formData[5];
+        String phone = formData[6];
+        String pincode = formData[7];
+        String address = formData[8];
+
+
+        try {
+            jsonBody.put("PageSize", pageSize);
+            jsonBody.put("NumberOfFaces", numberOfFaces);
+            jsonBody.put("PickupType", pickupType);
+            jsonBody.put("AddFrame", addFrame);
+            jsonBody.put("Name", name);
+            jsonBody.put("Email", email);
+            jsonBody.put("Phone", phone);
+            jsonBody.put("Pincode", pincode);
+            jsonBody.put("Address", address);
+            jsonBody.put("Image", encodeImageString);
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+        final String requestBody = jsonBody.toString();
+
         RequestQueue queue = Volley.newRequestQueue(MainActivity.this);
         StringRequest request = new StringRequest(Request.Method.POST, url, new Response.Listener<String>() {
             @Override
@@ -258,90 +372,91 @@ public class MainActivity extends AppCompatActivity
             public void onErrorResponse(VolleyError error) {
                 Log.v("volley response", String.valueOf(error));
             }
-        });
+        }) {
+            @Override
+            public String getBodyContentType() {
+                return "application/json; charset=utf-8";
+            }
+
+            @Override
+            public byte[] getBody() throws AuthFailureError {
+                try {
+                    return requestBody.getBytes("utf-8");
+                } catch (UnsupportedEncodingException uee) {
+                    VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", requestBody, "utf-8");
+                    return null;
+                }
+            }
+
+            @Override
+            protected Response<String> parseNetworkResponse(NetworkResponse response) {
+                String responseString = "";
+                if (response != null) {
+                    responseString = String.valueOf(response.statusCode);
+                    // can get more details such as response.headers
+                }
+                return Response.success(responseString, HttpHeaderParser.parseCacheHeaders(response));
+            }
+        };
         queue.add(request);
 
+
     }
 
-    private void sendOrderDetailsUsingVolley() {
+    public String[] getFormData() {
+        String[] formData = new String[9];
 
-        String url = "http://192.168.0.103:3000/payment-result";
+        String pageSize = "";
+        String numberOfFaces = "";
+        String pickupType = "";
+        String addFrame = "No";
+        String name = String.valueOf(editName.getText());
+        String email = String.valueOf(editEmail.getText());
+        String phone = String.valueOf(editPhone.getText());
+        String pincode = String.valueOf(editPincode.getText());
+        String address = String.valueOf(editAddress.getText());
 
-        try {
-            Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-            byte[] imageBytes = baos.toByteArray();
-            String base64Image = Base64.encodeToString(imageBytes, Base64.DEFAULT);
-            JSONObject jsonBody = new JSONObject();
-            try {
-                jsonBody.put("Page Size", "A2");
-                jsonBody.put("Author", "BNK");
-                jsonBody.put("Image", encodeImageString);
-            } catch (JSONException e) {
-                throw new RuntimeException(e);
-            }
-            final String requestBody = jsonBody.toString();
-
-            RequestQueue queue = Volley.newRequestQueue(MainActivity.this);
-            StringRequest request = new StringRequest(Request.Method.POST, url, new Response.Listener<String>() {
-                @Override
-                public void onResponse(String response) {
-                    try {
-                        JSONObject respObj = new JSONObject(response);
-                        String orderId = respObj.getString("order_id");
-                        Log.v("volley response id", orderId);
-                        Instamojo.getInstance().initiatePayment(MainActivity.this, orderId, MainActivity.this);
-
-                    } catch (JSONException e) {
-                        Log.v("volley response", String.valueOf(e));
-                    }
-                }
-            }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    Log.v("volley response", String.valueOf(error));
-                }
-            })
-            {
-                @Override
-                public String getBodyContentType() {
-                    return "application/json; charset=utf-8";
-                }
-
-                @Override
-                public byte[] getBody() throws AuthFailureError {
-                    try {
-                        return requestBody == null ? null : requestBody.getBytes("utf-8");
-                    } catch (UnsupportedEncodingException uee) {
-                        VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", requestBody, "utf-8");
-                        return null;
-                    }
-                }
-
-                @Override
-                protected Response<String> parseNetworkResponse(NetworkResponse response) {
-                    String responseString = "";
-                    if (response != null) {
-                        responseString = String.valueOf(response.statusCode);
-                        // can get more details such as response.headers
-                    }
-                    return Response.success(responseString, HttpHeaderParser.parseCacheHeaders(response));
-                }
-            };
-            queue.add(request);
-
-
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (radioGroupPage.getCheckedRadioButtonId() == R.id.radioA2) {
+            pageSize = "A2";
+        } else if (radioGroupPage.getCheckedRadioButtonId() == R.id.radioA3) {
+            pageSize = "A3";
+        } else if (radioGroupPage.getCheckedRadioButtonId() == R.id.radioA4) {
+            pageSize = "A4";
         }
 
+        if (radioGroupNumOfFaces.getCheckedRadioButtonId() == R.id.radio1Face) {
+            numberOfFaces = "1 Face";
+        } else if (radioGroupNumOfFaces.getCheckedRadioButtonId() == R.id.radio2Faces) {
+            numberOfFaces = "2 Faces";
+        } else if (radioGroupNumOfFaces.getCheckedRadioButtonId() == R.id.radio3Faces) {
+            numberOfFaces = "3 Faces";
+        }
 
+        if (radioGroupPickupType.getCheckedRadioButtonId() == R.id.radioHomePickup) {
+            pickupType = "Home";
+        } else if (radioGroupPickupType.getCheckedRadioButtonId() == R.id.radioStorePickup) {
+            pickupType = "Store";
+        }
 
+        if (radioGroupAddFrame.getCheckedRadioButtonId() == R.id.radioYesFrame) {
+            addFrame = "Yes";
+        } else if (radioGroupAddFrame.getCheckedRadioButtonId() == R.id.radioNoFrame) {
+            addFrame = "No";
+        }
 
+        formData[0] = pageSize;
+        formData[1] = numberOfFaces;
+        formData[2] = pickupType;
+        formData[3] = addFrame;
+        formData[4] = name;
+        formData[5] = email;
+        formData[6] = phone;
+        formData[7] = pincode;
+        formData[8] = address;
 
-
+        return formData;
     }
+
 
 //    private void createOrderUsingVolleyRazorpay() {
 //        String url = "http://192.168.0.102:3000/create-order-razorpay";
@@ -406,22 +521,70 @@ public class MainActivity extends AppCompatActivity
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null) {
             imageUri = data.getData();
-//            try {
-//
-//                Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
-//                imagePreview.setImageBitmap(bitmap);
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-            try{
-                InputStream inputStream = getContentResolver().openInputStream(imageUri);
-                Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-                imagePreview.setImageBitmap(bitmap);
-                encodeBitmapImage(bitmap);
-            } catch (FileNotFoundException e) {
-                Log.v("Error file not found", String.valueOf(e));
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                try {
+                    InputStream inputStream = getContentResolver().openInputStream(imageUri);
+
+                    // Get the orientation information from the image's metadata
+                    ExifInterface exifInterface = null;
+                    exifInterface = new ExifInterface(inputStream);
+
+                    int orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
+
+                    // Reset the stream to decode the bitmap
+                    inputStream = getContentResolver().openInputStream(imageUri);
+
+                    // Decode the input stream into a bitmap
+                    Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+                    if (bitmap != null) {
+                        // Rotate the bitmap according to the orientation information
+                        bitmap = rotateBitmap(bitmap, orientation);
+
+                        imagePreview.setImageBitmap(bitmap);
+                        encodeBitmapImage(bitmap);
+                    } else {
+                        Log.v("Error", "Failed to decode the bitmap");
+                    }
+                } catch (FileNotFoundException e) {
+                    Log.v("Error file not found", String.valueOf(e));
+                } catch (IOException e) {
+                    Log.v("Error reading metadata", String.valueOf(e));
+                }
+            } else {
+                try {
+                    InputStream inputStream = getContentResolver().openInputStream(imageUri);
+                    Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+                    imagePreview.setImageBitmap(bitmap);
+                    encodeBitmapImage(bitmap);
+                } catch (FileNotFoundException e) {
+                    Log.v("Error file not found", String.valueOf(e));
+                }
             }
         }
+    }
+
+    private Bitmap rotateBitmap(Bitmap bitmap, int orientation) {
+        Matrix matrix = new Matrix();
+        switch (orientation) {
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                matrix.postRotate(90);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                matrix.postRotate(180);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                matrix.postRotate(270);
+                break;
+            case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
+                matrix.postScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_FLIP_VERTICAL:
+                matrix.postScale(1, -1);
+                break;
+            default:
+                return bitmap; // No rotation needed
+        }
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
     }
 
     private void encodeBitmapImage(Bitmap bitmap) {
@@ -430,4 +593,84 @@ public class MainActivity extends AppCompatActivity
         byte[] bytesofimage = byteArrayOutputStream.toByteArray();
         encodeImageString = android.util.Base64.encodeToString(bytesofimage, Base64.DEFAULT);
     }
+
+    public int getOrderID(String pageSize, String numberOfFaces, String pickupType, String addFrame) {
+        if (pageSize.equals("A2") && numberOfFaces.equals("1 Face") && pickupType.equals("Store") && addFrame.equals("Yes")) {
+            return 1;
+        } else if (pageSize.equals("A2") && numberOfFaces.equals("1 Face") && pickupType.equals("Store") && addFrame.equals("No")) {
+            return 2;
+        } else if (pageSize.equals("A2") && numberOfFaces.equals("2 Faces") && pickupType.equals("Store") && addFrame.equals("Yes")) {
+            return 3;
+        } else if (pageSize.equals("A2") && numberOfFaces.equals("2 Faces") && pickupType.equals("Store") && addFrame.equals("No")) {
+            return 4;
+        } else if (pageSize.equals("A2") && numberOfFaces.equals("3 Faces") && pickupType.equals("Store") && addFrame.equals("Yes")) {
+            return 5;
+        } else if (pageSize.equals("A2") && numberOfFaces.equals("3 Faces") && pickupType.equals("Store") && addFrame.equals("No")) {
+            return 6;
+        } else if (pageSize.equals("A3") && numberOfFaces.equals("1 Face") && pickupType.equals("Store") && addFrame.equals("Yes")) {
+            return 7;
+        } else if (pageSize.equals("A3") && numberOfFaces.equals("1 Face") && pickupType.equals("Store") && addFrame.equals("No")) {
+            return 8;
+        } else if (pageSize.equals("A3") && numberOfFaces.equals("2 Faces") && pickupType.equals("Store") && addFrame.equals("Yes")) {
+            return 9;
+        } else if (pageSize.equals("A3") && numberOfFaces.equals("2 Faces") && pickupType.equals("Store") && addFrame.equals("No")) {
+            return 10;
+        } else if (pageSize.equals("A3") && numberOfFaces.equals("3 Faces") && pickupType.equals("Store") && addFrame.equals("Yes")) {
+            return 11;
+        } else if (pageSize.equals("A3") && numberOfFaces.equals("3 Faces") && pickupType.equals("Store") && addFrame.equals("No")) {
+            return 12;
+        } else if (pageSize.equals("A4") && numberOfFaces.equals("1 Face") && pickupType.equals("Store") && addFrame.equals("Yes")) {
+            return 13;
+        } else if (pageSize.equals("A4") && numberOfFaces.equals("1 Face") && pickupType.equals("Store") && addFrame.equals("No")) {
+            return 14;
+        } else if (pageSize.equals("A4") && numberOfFaces.equals("2 Faces") && pickupType.equals("Store") && addFrame.equals("Yes")) {
+            return 15;
+        } else if (pageSize.equals("A4") && numberOfFaces.equals("2 Faces") && pickupType.equals("Store") && addFrame.equals("No")) {
+            return 16;
+        } else if (pageSize.equals("A4") && numberOfFaces.equals("3 Faces") && pickupType.equals("Store") && addFrame.equals("Yes")) {
+            return 17;
+        } else if (pageSize.equals("A4") && numberOfFaces.equals("3 Faces") && pickupType.equals("Store") && addFrame.equals("No")) {
+            return 18;
+        } else if (pageSize.equals("A2") && numberOfFaces.equals("1 Face") && pickupType.equals("Home") && addFrame.equals("Yes")) {
+            return 19;
+        } else if (pageSize.equals("A2") && numberOfFaces.equals("1 Face") && pickupType.equals("Home") && addFrame.equals("No")) {
+            return 20;
+        } else if (pageSize.equals("A2") && numberOfFaces.equals("2 Faces") && pickupType.equals("Home") && addFrame.equals("Yes")) {
+            return 21;
+        } else if (pageSize.equals("A2") && numberOfFaces.equals("2 Faces") && pickupType.equals("Home") && addFrame.equals("No")) {
+            return 22;
+        } else if (pageSize.equals("A2") && numberOfFaces.equals("3 Faces") && pickupType.equals("Home") && addFrame.equals("Yes")) {
+            return 23;
+        } else if (pageSize.equals("A2") && numberOfFaces.equals("3 Faces") && pickupType.equals("Home") && addFrame.equals("No")) {
+            return 24;
+        } else if (pageSize.equals("A3") && numberOfFaces.equals("1 Face") && pickupType.equals("Home") && addFrame.equals("Yes")) {
+            return 25;
+        } else if (pageSize.equals("A3") && numberOfFaces.equals("1 Face") && pickupType.equals("Home") && addFrame.equals("No")) {
+            return 26;
+        } else if (pageSize.equals("A3") && numberOfFaces.equals("2 Faces") && pickupType.equals("Home") && addFrame.equals("Yes")) {
+            return 27;
+        } else if (pageSize.equals("A3") && numberOfFaces.equals("2 Faces") && pickupType.equals("Home") && addFrame.equals("No")) {
+            return 28;
+        } else if (pageSize.equals("A3") && numberOfFaces.equals("3 Faces") && pickupType.equals("Home") && addFrame.equals("Yes")) {
+            return 29;
+        } else if (pageSize.equals("A3") && numberOfFaces.equals("3 Faces") && pickupType.equals("Home") && addFrame.equals("No")) {
+            return 30;
+        } else if (pageSize.equals("A4") && numberOfFaces.equals("1 Face") && pickupType.equals("Home") && addFrame.equals("Yes")) {
+            return 31;
+        } else if (pageSize.equals("A4") && numberOfFaces.equals("1 Face") && pickupType.equals("Home") && addFrame.equals("No")) {
+            return 32;
+        } else if (pageSize.equals("A4") && numberOfFaces.equals("2 Faces") && pickupType.equals("Home") && addFrame.equals("Yes")) {
+            return 33;
+        } else if (pageSize.equals("A4") && numberOfFaces.equals("2 Faces") && pickupType.equals("Home") && addFrame.equals("No")) {
+            return 34;
+        } else if (pageSize.equals("A4") && numberOfFaces.equals("3 Faces") && pickupType.equals("Home") && addFrame.equals("Yes")) {
+            return 35;
+        } else if (pageSize.equals("A4") && numberOfFaces.equals("3 Faces") && pickupType.equals("Home") && addFrame.equals("No")) {
+            return 36;
+        }
+
+        // Return a default value if no matching condition is found
+        return -1;
+    }
+
 }
