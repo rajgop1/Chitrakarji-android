@@ -3,9 +3,9 @@ pluginManagement {
         google()
         mavenCentral()
         gradlePluginPortal()
-//        maven {
-//            url "https://s3-ap-southeast-1.amazonaws.com/godel-release/godel/"
-//        }
+        maven {
+            url "https://s3-ap-southeast-1.amazonaws.com/godel-release/godel/"
+        }
     }
 }
 dependencyResolutionManagement {
@@ -13,9 +13,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-//        maven {
-//            url "https://s3-ap-southeast-1.amazonaws.com/godel-release/godel/"
-//        }
+        maven {
+            url "https://s3-ap-southeast-1.amazonaws.com/godel-release/godel/"
+        }
     }
 }
 rootProject.name = "Chitrakarji"

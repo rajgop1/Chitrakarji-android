@@ -8,11 +8,13 @@ import androidx.appcompat.widget.Toolbar;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Base64;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -25,12 +27,17 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.NetworkResponse;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.HttpHeaderParser;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.instamojo.android.Instamojo;
 import com.razorpay.Checkout;
 import com.razorpay.PaymentResultListener;
 
@@ -39,13 +46,16 @@ import com.razorpay.PaymentResultListener;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity
-        implements PaymentResultListener
-//        implements Instamojo.InstamojoPaymentCallback
-{
+//        implements PaymentResultListener
+        implements Instamojo.InstamojoPaymentCallback {
 
     private Button payButton;
 
@@ -57,8 +67,10 @@ public class MainActivity extends AppCompatActivity
     private EditText editPincode;
     private EditText editAddress;
     private RadioButton radioHome;
+    private RadioGroup radioGroupPage;
 
     private Button btnSelectImage;
+    private String encodeImageString;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,15 +78,15 @@ public class MainActivity extends AppCompatActivity
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
 
         setContentView(R.layout.activity_main);
-//        Instamojo.getInstance().initialize(this, Instamojo.Environment.PRODUCTION);
+        Instamojo.getInstance().initialize(this, Instamojo.Environment.PRODUCTION);
 
         payButton = findViewById(R.id.btn_pay);
         payButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-//                createOrderUsingVolley();
-                createOrderUsingVolleyRazorpay();
+                createOrderUsingVolley();
+//                createOrderUsingVolleyRazorpay();
             }
         });
 
@@ -109,6 +121,8 @@ public class MainActivity extends AppCompatActivity
         editPincode = findViewById(R.id.editPincode);
         editAddress = findViewById(R.id.editAddress);
         radioHome = findViewById(R.id.radioHomePickup);
+        radioGroupPage = findViewById(R.id.radioGroupPageSize);
+
         layoutAddFrame = findViewById(R.id.addFrameGroup);
         // Image selection button click event
         btnSelectImage.setOnClickListener(new View.OnClickListener() {
@@ -224,7 +238,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void createOrderUsingVolley() {
-        String url = "http://192.168.0.101:3000/create-order";
+        String url = "http://192.168.0.103:3000/create-order";
         RequestQueue queue = Volley.newRequestQueue(MainActivity.this);
         StringRequest request = new StringRequest(Request.Method.POST, url, new Response.Listener<String>() {
             @Override
@@ -233,7 +247,7 @@ public class MainActivity extends AppCompatActivity
                     JSONObject respObj = new JSONObject(response);
                     String orderId = respObj.getString("order_id");
                     Log.v("volley response id", orderId);
-//                    Instamojo.getInstance().initiatePayment(MainActivity.this, orderId, MainActivity.this);
+                    Instamojo.getInstance().initiatePayment(MainActivity.this, orderId, MainActivity.this);
 
                 } catch (JSONException e) {
                     Log.v("volley response", String.valueOf(e));
@@ -249,60 +263,142 @@ public class MainActivity extends AppCompatActivity
 
     }
 
-    private void createOrderUsingVolleyRazorpay() {
-        String url = "http://192.168.0.102:3000/create-order-razorpay";
-        RequestQueue queue = Volley.newRequestQueue(MainActivity.this);
-        StringRequest request = new StringRequest(Request.Method.POST, url, new Response.Listener<String>() {
-            @Override
-            public void onResponse(String response) {
-                try {
-                    JSONObject respObj = new JSONObject(response);
-                    String orderId = respObj.getString("id");
-                    Log.v("volley response id", orderId);
-                    startPayment(orderId);
+    private void sendOrderDetailsUsingVolley() {
 
-                } catch (JSONException e) {
-                    Log.v("volley response", String.valueOf(e));
+        String url = "http://192.168.0.103:3000/payment-result";
+
+        try {
+            Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+            byte[] imageBytes = baos.toByteArray();
+            String base64Image = Base64.encodeToString(imageBytes, Base64.DEFAULT);
+            JSONObject jsonBody = new JSONObject();
+            try {
+                jsonBody.put("Page Size", "A2");
+                jsonBody.put("Author", "BNK");
+                jsonBody.put("Image", encodeImageString);
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+            final String requestBody = jsonBody.toString();
+
+            RequestQueue queue = Volley.newRequestQueue(MainActivity.this);
+            StringRequest request = new StringRequest(Request.Method.POST, url, new Response.Listener<String>() {
+                @Override
+                public void onResponse(String response) {
+                    try {
+                        JSONObject respObj = new JSONObject(response);
+                        String orderId = respObj.getString("order_id");
+                        Log.v("volley response id", orderId);
+                        Instamojo.getInstance().initiatePayment(MainActivity.this, orderId, MainActivity.this);
+
+                    } catch (JSONException e) {
+                        Log.v("volley response", String.valueOf(e));
+                    }
                 }
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.v("volley response", String.valueOf(error));
-            }
-        });
-        queue.add(request);
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Log.v("volley response", String.valueOf(error));
+                }
+            })
+            {
+                @Override
+                public String getBodyContentType() {
+                    return "application/json; charset=utf-8";
+                }
+
+                @Override
+                public byte[] getBody() throws AuthFailureError {
+                    try {
+                        return requestBody == null ? null : requestBody.getBytes("utf-8");
+                    } catch (UnsupportedEncodingException uee) {
+                        VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", requestBody, "utf-8");
+                        return null;
+                    }
+                }
+
+                @Override
+                protected Response<String> parseNetworkResponse(NetworkResponse response) {
+                    String responseString = "";
+                    if (response != null) {
+                        responseString = String.valueOf(response.statusCode);
+                        // can get more details such as response.headers
+                    }
+                    return Response.success(responseString, HttpHeaderParser.parseCacheHeaders(response));
+                }
+            };
+            queue.add(request);
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+
+
+
 
     }
 
-    @Override
-    public void onPaymentSuccess(String s) {
-        Log.v("razorpay result pay", s);
-        Toast.makeText(this, "Payment completed", Toast.LENGTH_SHORT).show();
-    }
+//    private void createOrderUsingVolleyRazorpay() {
+//        String url = "http://192.168.0.102:3000/create-order-razorpay";
+//        RequestQueue queue = Volley.newRequestQueue(MainActivity.this);
+//        StringRequest request = new StringRequest(Request.Method.POST, url, new Response.Listener<String>() {
+//            @Override
+//            public void onResponse(String response) {
+//                try {
+//                    JSONObject respObj = new JSONObject(response);
+//                    String orderId = respObj.getString("id");
+//                    Log.v("volley response id", orderId);
+//                    startPayment(orderId);
+//
+//                } catch (JSONException e) {
+//                    Log.v("volley response", String.valueOf(e));
+//                }
+//            }
+//        }, new Response.ErrorListener() {
+//            @Override
+//            public void onErrorResponse(VolleyError error) {
+//                Log.v("volley response", String.valueOf(error));
+//            }
+//        });
+//        queue.add(request);
+//
+//    }
 
-    @Override
-    public void onPaymentError(int i, String s) {
-        Log.v("razorpay result pay", s);
-        Toast.makeText(this, "Payment Error", Toast.LENGTH_SHORT).show();
-    }
-
-
+    // razorpay
 //    @Override
-//    public void onInstamojoPaymentComplete(String s, String s1, String s2, String s3) {
+//    public void onPaymentSuccess(String s) {
+//        Log.v("razorpay result pay", s);
 //        Toast.makeText(this, "Payment completed", Toast.LENGTH_SHORT).show();
 //    }
 //
 //    @Override
-//    public void onPaymentCancelled() {
-//        Toast.makeText(this, "Payment cancelled", Toast.LENGTH_SHORT).show();
+//    public void onPaymentError(int i, String s) {
+//        Log.v("razorpay result pay", s);
+//        Toast.makeText(this, "Payment Error", Toast.LENGTH_SHORT).show();
 //    }
-//
-//    @Override
-//    public void onInitiatePaymentFailure(String s) {
-//        Toast.makeText(this, "Payment failure", Toast.LENGTH_SHORT).show();
-//        Log.v("volley response failure", s);
-//    }
+
+
+    @Override
+    public void onInstamojoPaymentComplete(String s, String s1, String s2, String s3) {
+        Toast.makeText(this, "Payment completed", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onPaymentCancelled() {
+        Toast.makeText(this, "Payment cancelled", Toast.LENGTH_SHORT).show();
+        sendOrderDetailsUsingVolley();
+    }
+
+    @Override
+    public void onInitiatePaymentFailure(String s) {
+        Toast.makeText(this, "Payment failure", Toast.LENGTH_SHORT).show();
+        Log.v("volley response failure", s);
+    }
 
     // Handle the selected image
     @Override
@@ -310,12 +406,28 @@ public class MainActivity extends AppCompatActivity
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null) {
             imageUri = data.getData();
-            try {
-                Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+//            try {
+//
+//                Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+//                imagePreview.setImageBitmap(bitmap);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+            try{
+                InputStream inputStream = getContentResolver().openInputStream(imageUri);
+                Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
                 imagePreview.setImageBitmap(bitmap);
-            } catch (IOException e) {
-                e.printStackTrace();
+                encodeBitmapImage(bitmap);
+            } catch (FileNotFoundException e) {
+                Log.v("Error file not found", String.valueOf(e));
             }
         }
+    }
+
+    private void encodeBitmapImage(Bitmap bitmap) {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
+        byte[] bytesofimage = byteArrayOutputStream.toByteArray();
+        encodeImageString = android.util.Base64.encodeToString(bytesofimage, Base64.DEFAULT);
     }
 }

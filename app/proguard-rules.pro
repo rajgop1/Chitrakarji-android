@@ -20,8 +20,9 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
-## Rules for Instamojo SDK
-#-keep class com.instamojo.android.**{*;}
+# Rules for Instamojo SDK
+-keep class com.instamojo.android.**{*;}
+
 -keepclassmembers class * {
     @android.webkit.JavascriptInterface <methods>;
 }
